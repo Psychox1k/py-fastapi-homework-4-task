@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db, UserModel, UserProfileModel, UserGroupModel, UserGroupEnum
 from config import get_s3_storage_client, get_jwt_auth_manager
 from exceptions import BaseSecurityError
+from schemas.profiles import ProfileResponseSchema, ProfileCreateRequestSchema
 from storages.interfaces import S3StorageInterface
 from security.interfaces import JWTAuthManagerInterface
 from security.http import get_token
@@ -31,9 +32,9 @@ async def user_profile_creation(
         db: AsyncSession = Depends(get_db),
         jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager),
         s3_client: S3StorageInterface = Depends(get_s3_storage_client)
-) -> schemas.ProfileResponseSchema:
+) -> ProfileResponseSchema:
 
-    profile_validation = schemas.ProfileCreateRequestSchema(
+    profile_validation = ProfileCreateRequestSchema(
         first_name=first_name,
         last_name=last_name,
         gender=gender,
@@ -112,4 +113,4 @@ async def user_profile_creation(
     await db.commit()
     await db.refresh(db_user_profile)
 
-    return schemas.ProfileResponseSchema.model_validate(db_user_profile)
+    return ProfileResponseSchema.model_validate(db_user_profile)
