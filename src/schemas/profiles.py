@@ -20,7 +20,6 @@ class UserProfileBase(BaseModel):
     gender: str
     date_of_birth: date
     info: str
-    avatar: str
 
     @field_validator("first_name", "last_name")
     @classmethod
@@ -41,8 +40,14 @@ class UserProfileBase(BaseModel):
     @classmethod
     def validate_info(cls, value):
         if not value.strip():
-            raise ValueError("Info cannot be empty or consist only of spaces.")
+            raise ValueError(
+                "Info cannot be empty or consist only of spaces."
+            )
         return value
+
+
+class ProfileCreateRequestSchema(UserProfileBase):
+    avatar: UploadFile
 
     @field_validator("avatar")
     @classmethod
@@ -50,12 +55,9 @@ class UserProfileBase(BaseModel):
         return validate_image(value)
 
 
-class ProfileCreateRequestSchema(UserProfileBase):
-    pass
-
-
 class ProfileResponseSchema(UserProfileBase):
     id: int
     user_id: int
+    avatar: str
 
     model_config = ConfigDict(from_attributes=True)

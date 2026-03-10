@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 
-from fastapi import Depends, HTTPException, status, APIRouter
+from fastapi import Depends, HTTPException, status, APIRouter, Form, UploadFile, File
 from sqlalchemy import cast, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,12 +21,27 @@ router = APIRouter()
 @router.post("/users/{user_id}/profile/", status_code=status.HTTP_201_CREATED)
 async def user_profile_creation(
         user_id: int,
-        profile_data: schemas.ProfileCreateRequestSchema,
+        first_name: str = Form(...),
+        last_name: str = Form(...),
+        gender: str = Form(...),
+        date_of_birth: date = Form(...),
+        info: str = Form(...),
+        avatar: UploadFile = File(...),
         token: str = Depends(get_token),
         db: AsyncSession = Depends(get_db),
         jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager),
         s3_client: S3StorageInterface = Depends(get_s3_storage_client)
 ) -> schemas.ProfileResponseSchema:
+
+    profile_validation = schemas.ProfileCreateRequestSchema(
+        first_name=first_name,
+        last_name=last_name,
+        gender=gender,
+        date_of_birth=date_of_birth,
+        info=info,
+        avatar=avatar
+    )
+
     try:
 
         payload = jwt_manager.decode_access_token(token)
@@ -75,7 +90,7 @@ async def user_profile_creation(
         raise HTTPException(status_code=400, detail="User already has a profile.")
 
     try:
-        avatar_url = await s3_client.upload(profile_data.avatar)
+        avatar_url = await s3_client.upload(avatar)
     except Exception:
         raise HTTPException(
             status_code=500,
@@ -85,12 +100,12 @@ async def user_profile_creation(
         # БЛОК 2: Пишем в БД (если Блок 1 прошел успешно)
     db_user_profile = UserProfileModel(
         user_id=user_id,
-        first_name=profile_data.first_name,
-        last_name=profile_data.last_name,
-        avatar=avatar_url,
-        gender=profile_data.gender,
-        date_of_birth=profile_data.date_of_birth,
-        info=profile_data.info
+        first_name=profile_validation.first_name,
+        last_name=profile_validation.last_name,
+        gender=profile_validation.gender,
+        date_of_birth=profile_validation.date_of_birth,
+        info=profile_validation.info,
+        avatar=avatar_url
 
     )
     db.add(db_user_profile)
