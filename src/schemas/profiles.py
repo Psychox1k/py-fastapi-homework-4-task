@@ -1,6 +1,7 @@
 import datetime
 from datetime import date
-from typing import Any, Self
+from typing import Any
+from typing_extensions import Self
 
 from fastapi import UploadFile, Form, File, HTTPException
 from pydantic import BaseModel, field_validator, HttpUrl, ConfigDict

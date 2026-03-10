@@ -58,8 +58,11 @@ async def user_profile_creation(
     )
     db_current_user = request.scalar_one_or_none()
 
-    if not db_current_user:
-        raise HTTPException(status_code=401, detail="User not found.")
+    if not db_current_user or not db_current_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or token."
+        )
 
     stmt = select(
         UserGroupModel.id
